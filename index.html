@@ -1,0 +1,602 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Burraco Summer Tour — Classifiche</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --txt:#f2f4f8; --muted:#9aa3b2; --accent:#e0b24a; --accent2:#4a9be0;
+    --good:#3fbf7f; --bad:#e06a6a; --radius:14px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f4f5f7; --panel:#ffffff; --panel2:#f0f2f5; --line:#e2e5ea;
+      --txt:#1a1d23; --muted:#5b6472; --accent:#b8860b; --accent2:#2d6fb0; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--txt); font-size:16px; line-height:1.4;
+    -webkit-text-size-adjust:100%; padding-bottom:40px}
+  header{position:sticky; top:0; z-index:20; background:var(--panel);
+    border-bottom:1px solid var(--line); padding:12px 14px calc(12px + env(safe-area-inset-bottom,0));}
+  .brand{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .brand h1{font-size:18px; margin:0; font-weight:700; letter-spacing:.2px}
+  .brand .sub{font-size:12px; color:var(--muted); font-weight:500}
+  .spacer{flex:1}
+  .pill{font-size:11px; padding:3px 9px; border-radius:999px; background:var(--panel2);
+    border:1px solid var(--line); color:var(--muted); white-space:nowrap}
+  .tabs{display:flex; gap:6px; overflow-x:auto; margin-top:10px; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto; padding:8px 14px; border-radius:999px; border:1px solid var(--line);
+    background:transparent; color:var(--muted); font-size:14px; font-weight:600; cursor:pointer}
+  .tab.active{background:var(--accent); color:#1a1400; border-color:var(--accent)}
+  main{max-width:920px; margin:0 auto; padding:14px}
+  .toolbar{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center}
+  .search{flex:1; min-width:180px; display:flex; align-items:center; gap:8px;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:9px 12px}
+  .search input{flex:1; border:0; outline:0; background:transparent; color:var(--txt); font-size:16px}
+  .btn{border:1px solid var(--line); background:var(--panel); color:var(--txt);
+    padding:9px 14px; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent); color:#1a1400; border-color:var(--accent)}
+  .btn.ghost{background:transparent}
+  .btn.small{padding:6px 10px; font-size:13px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+  table{width:100%; border-collapse:collapse; font-size:15px}
+  th,td{text-align:left; padding:11px 12px; border-bottom:1px solid var(--line)}
+  th{font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); font-weight:700;
+    position:sticky; top:0; background:var(--panel2)}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  .rank{display:inline-flex; align-items:center; justify-content:center; min-width:26px; height:26px;
+    border-radius:8px; background:var(--panel2); font-weight:700; font-size:13px}
+  tr.top1 .rank{background:#e0b24a; color:#1a1400}
+  tr.top2 .rank{background:#b9c0cc; color:#111}
+  tr.top3 .rank{background:#cd8b5b; color:#160c00}
+  .names{font-weight:600}
+  .names small{display:block; color:var(--muted); font-weight:500; font-size:12px}
+  .vp{font-weight:800; color:var(--accent)}
+  .mp.pos{color:var(--good)} .mp.neg{color:var(--bad)}
+  .muted{color:var(--muted)}
+  .center{text-align:center}
+  .empty{padding:40px 16px; text-align:center; color:var(--muted)}
+  .fin-badge{display:inline-block; font-size:11px; font-weight:700; color:var(--good);
+    border:1px solid var(--good); border-radius:6px; padding:1px 6px; margin-left:6px}
+  .presenze-dots{display:flex; gap:3px; flex-wrap:wrap}
+  .dot{width:16px; height:16px; border-radius:4px; background:var(--panel2); border:1px solid var(--line);
+    font-size:10px; display:flex; align-items:center; justify-content:center; color:var(--muted)}
+  .dot.on{background:var(--good); border-color:var(--good); color:#04240f; font-weight:700}
+  /* admin */
+  .admin-bar{margin-top:22px}
+  details.admin{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:0; overflow:hidden}
+  details.admin>summary{cursor:pointer; padding:14px 16px; font-weight:700; list-style:none; display:flex; align-items:center; gap:10px}
+  details.admin>summary::-webkit-details-marker{display:none}
+  .admin-body{padding:0 16px 16px}
+  .field{margin:10px 0}
+  .field label{display:block; font-size:13px; color:var(--muted); margin-bottom:5px; font-weight:600}
+  .field input,.field select{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--txt); font-size:16px; outline:0}
+  .row{display:flex; gap:10px; flex-wrap:wrap}
+  .row>*{flex:1; min-width:120px}
+  .section{border-top:1px solid var(--line); margin-top:16px; padding-top:14px}
+  .section h3{margin:0 0 4px; font-size:15px}
+  .section p.hint{margin:0 0 10px; font-size:13px; color:var(--muted)}
+  .status{font-size:13px; padding:8px 12px; border-radius:10px; margin-top:10px; display:none}
+  .status.show{display:block}
+  .status.ok{background:rgba(63,191,127,.14); color:var(--good); border:1px solid var(--good)}
+  .status.err{background:rgba(224,106,106,.14); color:var(--bad); border:1px solid var(--bad)}
+  .status.info{background:var(--panel2); color:var(--muted); border:1px solid var(--line)}
+  .rowlist{margin-top:10px; max-height:280px; overflow:auto; border:1px solid var(--line); border-radius:10px}
+  .rowlist .ri{display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--line); font-size:14px}
+  .rowlist .ri:last-child{border-bottom:0}
+  .rowlist .ri .x{color:var(--bad); cursor:pointer; font-weight:800; padding:0 6px}
+  .tag{font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px}
+  .footer{max-width:920px; margin:24px auto 0; padding:0 14px; color:var(--muted); font-size:12px; text-align:center}
+  a{color:var(--accent2)}
+  .kbd{font-family:ui-monospace,Menlo,Consolas,monospace; background:var(--panel2); border:1px solid var(--line);
+    border-radius:6px; padding:1px 6px; font-size:12px}
+</style>
+
+<header>
+  <div class="brand">
+    <span style="font-size:22px">🃏</span>
+    <div>
+      <h1 id="tourName">Burraco Summer Tour</h1>
+      <div class="sub" id="tourSub">Classifiche del circuito</div>
+    </div>
+    <span class="spacer"></span>
+    <span class="pill" id="updPill">—</span>
+    <button class="btn small ghost" id="refreshBtn" title="Aggiorna">↻</button>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="coppie">Coppie</button>
+    <button class="tab" data-tab="singoli">Singoli</button>
+    <button class="tab" data-tab="fedelta">Fedeltà</button>
+    <button class="tab" data-tab="finalisti">Finalisti</button>
+    <button class="tab" data-tab="tappe">Tappe</button>
+  </nav>
+</header>
+
+<main>
+  <div class="toolbar">
+    <div class="search">
+      <span>🔎</span>
+      <input id="search" placeholder="Trova il tuo nome…" autocomplete="off">
+    </div>
+    <select id="tappaSelect" class="btn" style="display:none"></select>
+  </div>
+
+  <div id="view"><div class="empty">Caricamento…</div></div>
+
+  <div class="admin-bar">
+    <details class="admin" id="adminBox">
+      <summary>🔐 Area organizzatore <span class="spacer"></span><span class="tag" id="adminState">non connesso</span></summary>
+      <div class="admin-body" id="adminBody"></div>
+    </details>
+  </div>
+</main>
+
+<div class="footer">
+  Dati salvati su GitHub · ogni modifica crea una copia di sicurezza permanente.<br>
+  <span id="footNote"></span>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — repository GitHub che ospita i dati
+   ============================================================ */
+const OWNER = "Cyberianna";
+const REPO  = "burraco-summer-tour";
+const DATA_PATH = "data.json";
+
+/* ============================================================
+   STATO
+   ============================================================ */
+let DATA = null;      // dati correnti
+let SHA  = null;      // sha del file data.json su GitHub (per il salvataggio)
+let TAB  = "coppie";
+let editRows = [];    // righe risultato in inserimento (tappa corrente admin)
+
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const token = {
+  get(){ return localStorage.getItem("bst_token") || ""; },
+  set(v){ v ? localStorage.setItem("bst_token",v) : localStorage.removeItem("bst_token"); }
+};
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+function normName(s){
+  if(s==null) return "";
+  return String(s).trim().replace(/\s+/g," ").replace(/[.\s]+$/,"").trim().toUpperCase();
+}
+function coppiaKey(a,b){ return [normName(a),normName(b)].sort().join(" / "); }
+function resolveName(n){ // applica gli alias (unione duplicati)
+  const a = (DATA.aliases||{}); n = normName(n);
+  let hops=0; while(a[n] && hops++<5){ n = normName(a[n]); }
+  return n;
+}
+function fmtMP(v){ v = Number(v)||0; return (v>0?"+":"")+v.toLocaleString("it-IT"); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+/* ============================================================
+   CARICAMENTO DATI
+   ============================================================ */
+async function loadData(){
+  // Con token: leggo via API GitHub (sempre aggiornato). Senza: leggo il file statico.
+  try{
+    if(token.get()){
+      const f = await ghGet(DATA_PATH);
+      if(f){ SHA = f.sha; DATA = JSON.parse(b64decode(f.content)); }
+    }
+    if(!DATA){
+      const r = await fetch("./"+DATA_PATH+"?ts="+Date.now(), {cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      DATA = await r.json();
+    }
+  }catch(e){
+    // fallback: prova comunque il file statico
+    try{ const r = await fetch("./"+DATA_PATH+"?ts="+Date.now(),{cache:"no-store"}); DATA = await r.json(); }
+    catch(e2){ DATA = null; }
+  }
+  if(DATA){
+    DATA.giocatori   = DATA.giocatori   || [];
+    DATA.tappe       = DATA.tappe       || [];
+    DATA.risultati   = DATA.risultati   || [];
+    DATA.aliases     = DATA.aliases     || {};
+    DATA.impostazioni= DATA.impostazioni|| {finalistiPercentuale:15, presenzeMinime:6};
+    DATA.meta        = DATA.meta        || {nomeTorneo:"Burraco Summer Tour"};
+  }
+}
+
+/* ============================================================
+   CALCOLO CLASSIFICHE
+   ============================================================ */
+function playersFromResults(){
+  const set = new Set((DATA.giocatori||[]).map(g=>resolveName(g.nome)));
+  DATA.risultati.forEach(r=>{ if(r.g1) set.add(resolveName(r.g1)); if(r.g2) set.add(resolveName(r.g2)); });
+  set.delete("");
+  return [...set].sort();
+}
+function classificaCoppie(){
+  const map = new Map();
+  DATA.risultati.forEach(r=>{
+    const a=resolveName(r.g1), b=resolveName(r.g2); if(!a||!b) return;
+    const k = coppiaKey(a,b);
+    if(!map.has(k)) map.set(k,{key:k,a,b,mp:0,vp:0,tappe:new Set()});
+    const o=map.get(k); o.mp+=Number(r.mp)||0; o.vp+=Number(r.vp)||0; o.tappe.add(r.tappaId);
+  });
+  return [...map.values()].map(o=>({...o,presenze:o.tappe.size}))
+    .sort((x,y)=> y.vp-x.vp || y.mp-x.mp || y.presenze-x.presenze);
+}
+function classificaSingoli(){
+  const map = new Map();
+  DATA.risultati.forEach(r=>{
+    [resolveName(r.g1),resolveName(r.g2)].forEach(n=>{
+      if(!n) return;
+      if(!map.has(n)) map.set(n,{nome:n,mp:0,vp:0,tappe:new Set()});
+      const o=map.get(n); o.mp+=Number(r.mp)||0; o.vp+=Number(r.vp)||0; o.tappe.add(r.tappaId);
+    });
+  });
+  return [...map.values()].map(o=>({...o,presenze:o.tappe.size}))
+    .sort((x,y)=> y.vp-x.vp || y.mp-x.mp || y.presenze-x.presenze);
+}
+function fedelta(){
+  const s = classificaSingoli();
+  return [...s].sort((x,y)=> y.presenze-x.presenze || y.vp-x.vp);
+}
+function finalistiCoppie(){
+  const c = classificaCoppie();
+  const min = Number(DATA.impostazioni.presenzeMinime)||0;
+  const perc = Number(DATA.impostazioni.finalistiPercentuale)||0;
+  const eligibili = c.filter(x=>x.presenze>=min);
+  const n = Math.max(1, Math.round(c.length*perc/100));
+  return {list:eligibili.slice(0,n), n, min, perc, totale:c.length};
+}
+function nTappe(){ return DATA.tappe.length; }
+function tappaById(id){ return DATA.tappe.find(t=>t.id===id); }
+function tappaLabel(t){ return "Tappa "+t.numero + (t.data?(" · "+t.data):"") + (t.luogo?(" · "+t.luogo):""); }
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  const q = normName($("#search").value);
+  $("#tourName").textContent = DATA.meta.nomeTorneo || "Burraco Summer Tour";
+  $("#tourSub").textContent = "Circuito · "+nTappe()+" tappe";
+  $("#updPill").textContent = "aggiornato alla "+ (DATA.meta.aggiornatoAllaTappa || nTappe()) +"ª tappa";
+  $("#tappaSelect").style.display = (TAB==="tappe")?"":"none";
+
+  const v = $("#view");
+  if(!DATA){ v.innerHTML='<div class="empty">Impossibile caricare i dati.</div>'; return; }
+
+  if(TAB==="coppie")   return renderCoppie(v,q);
+  if(TAB==="singoli")  return renderSingoli(v,q);
+  if(TAB==="fedelta")  return renderFedelta(v,q);
+  if(TAB==="finalisti")return renderFinalisti(v,q);
+  if(TAB==="tappe")    return renderTappe(v,q);
+}
+function rankClass(i){ return i===0?"top1":i===1?"top2":i===2?"top3":""; }
+
+function renderCoppie(v,q){
+  const fin = finalistiCoppie();
+  const finKeys = new Set(fin.list.map(x=>x.key));
+  let rows = classificaCoppie();
+  if(q) rows = rows.filter(r=> normName(r.a).includes(q) || normName(r.b).includes(q) || r.key.includes(q));
+  if(!rows.length) return v.innerHTML='<div class="empty">Nessuna coppia trovata.</div>';
+  v.innerHTML = `<div class="card"><table><thead><tr>
+    <th class="num">#</th><th>Coppia</th><th class="num">Pres.</th><th class="num">MP</th><th class="num">VP</th>
+    </tr></thead><tbody>${rows.map((r,i)=>`
+    <tr class="${rankClass(i)}">
+      <td class="num"><span class="rank">${i+1}</span></td>
+      <td class="names">${esc(r.a)} <small>${esc(r.b)}${finKeys.has(r.key)?'<span class="fin-badge">FINALE</span>':''}</small></td>
+      <td class="num">${r.presenze}</td>
+      <td class="num mp ${r.mp>=0?'pos':'neg'}">${fmtMP(r.mp)}</td>
+      <td class="num vp">${r.vp}</td>
+    </tr>`).join("")}</tbody></table></div>
+    <p class="muted" style="font-size:12px;margin:10px 2px">Ordinamento: VP (punti classifica) → MP (differenza) → presenze.</p>`;
+}
+function renderSingoli(v,q){
+  let rows = classificaSingoli();
+  if(q) rows = rows.filter(r=> normName(r.nome).includes(q));
+  if(!rows.length) return v.innerHTML='<div class="empty">Nessun giocatore trovato.</div>';
+  v.innerHTML = `<div class="card"><table><thead><tr>
+    <th class="num">#</th><th>Giocatore</th><th class="num">Pres.</th><th class="num">MP</th><th class="num">VP</th>
+    </tr></thead><tbody>${rows.map((r,i)=>`
+    <tr class="${rankClass(i)}">
+      <td class="num"><span class="rank">${i+1}</span></td>
+      <td class="names">${esc(r.nome)}</td>
+      <td class="num">${r.presenze}</td>
+      <td class="num mp ${r.mp>=0?'pos':'neg'}">${fmtMP(r.mp)}</td>
+      <td class="num vp">${r.vp}</td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+function renderFedelta(v,q){
+  let rows = fedelta();
+  if(q) rows = rows.filter(r=> normName(r.nome).includes(q));
+  const tappe = [...DATA.tappe].sort((a,b)=>a.numero-b.numero);
+  if(!rows.length) return v.innerHTML='<div class="empty">Nessun giocatore.</div>';
+  v.innerHTML = `<div class="card"><table><thead><tr>
+    <th>Giocatore</th><th class="num">Presenze</th><th>Tappe giocate</th>
+    </tr></thead><tbody>${rows.map(r=>`
+    <tr>
+      <td class="names">${esc(r.nome)}</td>
+      <td class="num vp">${r.presenze}</td>
+      <td><div class="presenze-dots">${tappe.map(t=>`<span class="dot ${r.tappe.has(t.id)?'on':''}">${t.numero}</span>`).join("")}</div></td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+function renderFinalisti(v,q){
+  const fin = finalistiCoppie();
+  let rows = fin.list;
+  if(q) rows = rows.filter(r=> normName(r.a).includes(q) || normName(r.b).includes(q));
+  v.innerHTML = `
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <strong>Finalisti (coppie)</strong>
+      <p class="muted" style="margin:6px 0 0;font-size:13px">
+        Criteri attuali: migliori <b>${fin.perc}%</b> delle coppie (=${fin.n} su ${fin.totale}) con almeno
+        <b>${fin.min}</b> presenze. <span class="muted">Modificabili nell'area organizzatore.</span></p>
+    </div>
+    <div class="card"><table><thead><tr>
+      <th class="num">#</th><th>Coppia</th><th class="num">Pres.</th><th class="num">VP</th>
+    </tr></thead><tbody>${rows.map((r,i)=>`
+      <tr>
+        <td class="num"><span class="rank">${i+1}</span></td>
+        <td class="names">${esc(r.a)} <small>${esc(r.b)}</small></td>
+        <td class="num">${r.presenze}</td>
+        <td class="num vp">${r.vp}</td>
+      </tr>`).join("")||`<tr><td colspan="4" class="empty">Nessun finalista con i criteri attuali.</td></tr>`}
+    </tbody></table></div>`;
+}
+function renderTappe(v,q){
+  const sel = $("#tappaSelect");
+  const tappe = [...DATA.tappe].sort((a,b)=>b.numero-a.numero);
+  if(sel.dataset.n != tappe.length){
+    sel.innerHTML = tappe.map(t=>`<option value="${t.id}">${esc(tappaLabel(t))}</option>`).join("");
+    sel.dataset.n = tappe.length;
+  }
+  const tid = sel.value || (tappe[0]&&tappe[0].id);
+  if(!tid){ v.innerHTML='<div class="empty">Nessuna tappa inserita.</div>'; return; }
+  let rows = DATA.risultati.filter(r=>r.tappaId===tid)
+    .map(r=>({a:resolveName(r.g1),b:resolveName(r.g2),mp:Number(r.mp)||0,vp:Number(r.vp)||0,pos:r.pos||0}))
+    .sort((x,y)=> y.vp-x.vp || y.mp-x.mp);
+  if(q) rows = rows.filter(r=> normName(r.a).includes(q)||normName(r.b).includes(q));
+  v.innerHTML = `<div class="card"><table><thead><tr>
+    <th class="num">#</th><th>Coppia</th><th class="num">MP</th><th class="num">VP</th>
+    </tr></thead><tbody>${rows.map((r,i)=>`
+    <tr class="${rankClass(i)}">
+      <td class="num"><span class="rank">${i+1}</span></td>
+      <td class="names">${esc(r.a)} <small>${esc(r.b)}</small></td>
+      <td class="num mp ${r.mp>=0?'pos':'neg'}">${fmtMP(r.mp)}</td>
+      <td class="num vp">${r.vp}</td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+
+/* ============================================================
+   GITHUB API
+   ============================================================ */
+function ghHeaders(){
+  return { "Authorization":"Bearer "+token.get(),
+    "Accept":"application/vnd.github+json", "X-GitHub-Api-Version":"2022-11-28" };
+}
+async function ghGet(path){
+  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}?ts=${Date.now()}`,
+    {headers: ghHeaders(), cache:"no-store"});
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error("GitHub GET "+r.status+": "+(await r.text()));
+  return await r.json();
+}
+async function ghPut(path, contentStr, sha, message){
+  const body = { message, content: b64encode(contentStr) };
+  if(sha) body.sha = sha;
+  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
+    {method:"PUT", headers:{...ghHeaders(),"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  if(!r.ok) throw new Error("GitHub PUT "+r.status+": "+(await r.text()));
+  return await r.json();
+}
+function b64encode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64decode(b64){ return decodeURIComponent(escape(atob(b64.replace(/\s/g,"")))); }
+
+async function saveData(message){
+  if(!token.get()) throw new Error("Token organizzatore mancante.");
+  // rileggo sempre lo sha aggiornato per non sovrascrivere modifiche altrui
+  const cur = await ghGet(DATA_PATH);
+  SHA = cur ? cur.sha : null;
+  DATA.meta.aggiornatoAllaTappa = nTappe();
+  DATA.meta.updatedAt = new Date().toISOString();
+  const res = await ghPut(DATA_PATH, JSON.stringify(DATA,null,2), SHA, message||"Aggiornamento classifiche (via app)");
+  SHA = res.content.sha;
+  return res;
+}
+
+/* ============================================================
+   ADMIN UI
+   ============================================================ */
+function renderAdmin(){
+  const body = $("#adminBody");
+  const connected = !!token.get();
+  $("#adminState").textContent = connected ? "connesso ✓" : "non connesso";
+  if(!connected){
+    body.innerHTML = `
+      <p class="hint">Per <b>modificare</b> i dati serve la chiave organizzatore (token GitHub).
+      La chiave resta salvata <b>solo su questo dispositivo</b>. Chi guarda le classifiche non ne ha bisogno.</p>
+      <div class="field"><label>Chiave organizzatore (token GitHub)</label>
+        <input id="tokenInput" type="password" placeholder="github_pat_… oppure ghp_…" autocomplete="off"></div>
+      <button class="btn primary" id="loginBtn">Connetti</button>
+      <div class="status info show" style="margin-top:12px">
+        Non ce l'hai? Guida rapida per crearla: apri <span class="kbd">github.com/settings/personal-access-tokens</span>,
+        crea un <i>Fine-grained token</i> con accesso al repository <b>${REPO}</b> e permesso
+        <b>Contents: Read and write</b>, poi incollala qui.</div>
+      <div id="adminStatus" class="status"></div>`;
+    $("#loginBtn").onclick = async ()=>{
+      const t = $("#tokenInput").value.trim(); if(!t) return;
+      token.set(t);
+      setStatus("Verifico la chiave…","info");
+      try{ await loadData(); token.set(t); setStatus("Connesso! Ora puoi modificare.","ok"); renderAdmin(); render(); }
+      catch(e){ token.set(""); setStatus("Chiave non valida o senza permessi: "+e.message,"err"); }
+    };
+    return;
+  }
+  // connesso
+  const players = playersFromResults();
+  body.innerHTML = `
+    <div class="row">
+      <button class="btn" id="logoutBtn">Disconnetti</button>
+      <button class="btn" id="exportJson">⬇︎ Backup JSON</button>
+      <button class="btn" id="exportCsv">⬇︎ Esporta classifiche (CSV)</button>
+    </div>
+
+    <div class="section">
+      <h3>➕ Nuova tappa</h3>
+      <p class="hint">Crea la serata, poi inserisci sotto i risultati delle coppie.</p>
+      <div class="row">
+        <div class="field"><label>Numero</label><input id="ntNum" type="number" value="${nTappe()+1}"></div>
+        <div class="field"><label>Data</label><input id="ntData" type="date" value="${todayISO()}"></div>
+        <div class="field"><label>Luogo (facoltativo)</label><input id="ntLuogo" placeholder="es. Circolo…"></div>
+      </div>
+      <button class="btn primary" id="addTappaBtn">Crea tappa</button>
+    </div>
+
+    <div class="section">
+      <h3>📝 Inserisci risultati</h3>
+      <div class="field"><label>Tappa</label>
+        <select id="riTappa">${[...DATA.tappe].sort((a,b)=>b.numero-a.numero).map(t=>`<option value="${t.id}">${esc(tappaLabel(t))}</option>`).join("")||'<option value="">— crea prima una tappa —</option>'}</select></div>
+      <datalist id="playerList">${players.map(p=>`<option value="${esc(p)}">`).join("")}</datalist>
+      <div class="row">
+        <div class="field"><label>Giocatore 1</label><input id="riG1" list="playerList" placeholder="Cognome Nome"></div>
+        <div class="field"><label>Giocatore 2</label><input id="riG2" list="playerList" placeholder="Cognome Nome"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>MP (differenza, può essere negativa)</label><input id="riMP" type="number" placeholder="es. 1485 o -820"></div>
+        <div class="field"><label>VP (punti classifica)</label><input id="riVP" type="number" placeholder="es. 47"></div>
+      </div>
+      <button class="btn" id="addRowBtn">Aggiungi coppia all'elenco</button>
+      <div class="rowlist" id="editRows"></div>
+      <button class="btn primary" id="saveRowsBtn" style="margin-top:12px">💾 Salva risultati su GitHub</button>
+    </div>
+
+    <div class="section">
+      <h3>👥 Giocatori — unisci duplicati</h3>
+      <p class="hint">Es. "BALISTIERI GIUSEPPE" e "BALISTRIERI GIUSEPPE" sono la stessa persona: uniscili.</p>
+      <div class="row">
+        <div class="field"><label>Nome sbagliato / doppione</label><input id="mgFrom" list="playerList" placeholder="nome da unire"></div>
+        <div class="field"><label>Nome corretto</label><input id="mgTo" list="playerList" placeholder="nome corretto"></div>
+      </div>
+      <button class="btn" id="mergeBtn">Unisci (e salva)</button>
+    </div>
+
+    <div class="section">
+      <h3>⚙️ Criteri finalisti</h3>
+      <div class="row">
+        <div class="field"><label>% coppie ammesse</label><input id="setPerc" type="number" value="${DATA.impostazioni.finalistiPercentuale}"></div>
+        <div class="field"><label>Presenze minime</label><input id="setMin" type="number" value="${DATA.impostazioni.presenzeMinime}"></div>
+        <div class="field"><label>Nome torneo</label><input id="setNome" value="${esc(DATA.meta.nomeTorneo||'')}"></div>
+      </div>
+      <button class="btn" id="saveSetBtn">Salva impostazioni</button>
+    </div>
+
+    <div id="adminStatus" class="status"></div>`;
+
+  $("#logoutBtn").onclick = ()=>{ token.set(""); renderAdmin(); };
+  $("#exportJson").onclick = exportJson;
+  $("#exportCsv").onclick = exportCsv;
+  $("#addTappaBtn").onclick = addTappa;
+  $("#addRowBtn").onclick = addEditRow;
+  $("#saveRowsBtn").onclick = saveRows;
+  $("#mergeBtn").onclick = mergePlayers;
+  $("#saveSetBtn").onclick = saveSettings;
+  drawEditRows();
+}
+function setStatus(msg,type){
+  const el = $("#adminStatus"); if(!el) return;
+  el.className = "status show "+(type||"info"); el.textContent = msg;
+}
+
+function addTappa(){
+  const num = parseInt($("#ntNum").value)||nTappe()+1;
+  const id = "t"+Date.now();
+  DATA.tappe.push({id, numero:num, data:$("#ntData").value||null, luogo:$("#ntLuogo").value.trim()||null});
+  saveData("Creata tappa "+num).then(()=>{ setStatus("Tappa "+num+" creata e salvata.","ok"); renderAdmin(); render(); })
+    .catch(e=>{ DATA.tappe.pop(); setStatus("Errore salvataggio: "+e.message,"err"); });
+}
+function addEditRow(){
+  const g1=$("#riG1").value.trim(), g2=$("#riG2").value.trim();
+  const mp=parseInt($("#riMP").value), vp=parseInt($("#riVP").value);
+  if(!g1||!g2) return setStatus("Inserisci entrambi i giocatori.","err");
+  if(isNaN(mp)||isNaN(vp)) return setStatus("Inserisci MP e VP (numeri).","err");
+  editRows.push({tappaId:$("#riTappa").value, g1:normName(g1), g2:normName(g2), mp, vp});
+  $("#riG1").value=$("#riG2").value=$("#riMP").value=$("#riVP").value="";
+  $("#riG1").focus(); drawEditRows(); setStatus("","info");
+}
+function drawEditRows(){
+  const box=$("#editRows"); if(!box) return;
+  if(!editRows.length){ box.innerHTML='<div class="ri muted">Nessuna coppia in coda. Aggiungine sopra.</div>'; return; }
+  box.innerHTML = editRows.map((r,i)=>`<div class="ri">
+    <span style="flex:1">${esc(r.g1)} / ${esc(r.g2)}</span>
+    <span class="tag">MP ${fmtMP(r.mp)}</span><span class="tag">VP ${r.vp}</span>
+    <span class="x" data-i="${i}">✕</span></div>`).join("");
+  $$(".x",box).forEach(x=> x.onclick=()=>{ editRows.splice(+x.dataset.i,1); drawEditRows(); });
+}
+async function saveRows(){
+  if(!editRows.length) return setStatus("Nessuna coppia da salvare.","err");
+  const backup = DATA.risultati.slice();
+  editRows.forEach(r=> DATA.risultati.push({...r}));
+  setStatus("Salvataggio in corso…","info");
+  try{
+    const tId = editRows[0].tappaId, t=tappaById(tId);
+    await saveData("Inseriti "+editRows.length+" risultati"+(t?(" tappa "+t.numero):""));
+    editRows=[]; drawEditRows(); setStatus("Risultati salvati! Copia di sicurezza creata su GitHub.","ok"); render(); renderAdmin();
+  }catch(e){ DATA.risultati=backup; setStatus("Errore: "+e.message,"err"); }
+}
+async function mergePlayers(){
+  const from=normName($("#mgFrom").value), to=normName($("#mgTo").value);
+  if(!from||!to||from===to) return setStatus("Inserisci due nomi diversi.","err");
+  DATA.aliases[from]=to;
+  try{ await saveData("Unito giocatore "+from+" → "+to); setStatus("Unione salvata.","ok"); render(); renderAdmin(); }
+  catch(e){ delete DATA.aliases[from]; setStatus("Errore: "+e.message,"err"); }
+}
+async function saveSettings(){
+  const old=JSON.stringify({i:DATA.impostazioni,m:DATA.meta.nomeTorneo});
+  DATA.impostazioni.finalistiPercentuale=parseInt($("#setPerc").value)||15;
+  DATA.impostazioni.presenzeMinime=parseInt($("#setMin").value)||0;
+  DATA.meta.nomeTorneo=$("#setNome").value.trim()||DATA.meta.nomeTorneo;
+  try{ await saveData("Aggiornate impostazioni"); setStatus("Impostazioni salvate.","ok"); render(); }
+  catch(e){ setStatus("Errore: "+e.message,"err"); }
+}
+
+/* ============================================================
+   EXPORT / BACKUP
+   ============================================================ */
+function download(name, text, type){
+  const blob=new Blob([text],{type:type||"text/plain;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function exportJson(){ download("burraco-backup-"+todayISO()+".json", JSON.stringify(DATA,null,2), "application/json"); }
+function exportCsv(){
+  const c=classificaCoppie(), s=classificaSingoli();
+  let out="CLASSIFICA COPPIE\nPos;Giocatore 1;Giocatore 2;Presenze;MP;VP\n";
+  c.forEach((r,i)=> out+=`${i+1};${r.a};${r.b};${r.presenze};${r.mp};${r.vp}\n`);
+  out+="\nCLASSIFICA SINGOLI\nPos;Giocatore;Presenze;MP;VP\n";
+  s.forEach((r,i)=> out+=`${i+1};${r.nome};${r.presenze};${r.mp};${r.vp}\n`);
+  download("burraco-classifiche-"+todayISO()+".csv", "﻿"+out, "text/csv;charset=utf-8");
+}
+
+/* ============================================================
+   AVVIO
+   ============================================================ */
+function bindUI(){
+  $$("#tabs .tab").forEach(b=> b.onclick=()=>{ TAB=b.dataset.tab;
+    $$("#tabs .tab").forEach(x=>x.classList.toggle("active",x===b)); render(); });
+  $("#search").addEventListener("input", ()=>render());
+  $("#tappaSelect").addEventListener("change", ()=>render());
+  $("#refreshBtn").onclick = async ()=>{ SHA=null; DATA=null; await loadData(); render(); };
+  $("#adminBox").addEventListener("toggle", e=>{ if(e.target.open) renderAdmin(); });
+}
+(async function(){
+  bindUI();
+  await loadData();
+  render();
+  $("#footNote").innerHTML = "Progetto: <span class='kbd'>"+OWNER+"/"+REPO+"</span>";
+})();
+</script>
