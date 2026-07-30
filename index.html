@@ -65,8 +65,9 @@
   .dot{width:16px; height:16px; border-radius:4px; background:var(--panel2); border:1px solid var(--line);
     font-size:10px; display:flex; align-items:center; justify-content:center; color:var(--muted)}
   .dot.on{background:var(--good); border-color:var(--good); color:#04240f; font-weight:700}
-  /* admin */
-  .admin-bar{margin-top:22px}
+  /* admin — nascosta di default: compare solo col link segreto (vedi ADMIN_HASH) */
+  .admin-bar{margin-top:22px; display:none}
+  .admin-bar.sbloccata{display:block}
   details.admin{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:0; overflow:hidden}
   details.admin>summary{cursor:pointer; padding:14px 16px; font-weight:700; list-style:none; display:flex; align-items:center; gap:10px}
   details.admin>summary::-webkit-details-marker{display:none}
@@ -147,6 +148,15 @@
 const OWNER = "Cyberianna";
 const REPO  = "burraco-summer-tour";
 const DATA_PATH = "data.json";
+
+/* Parola segreta del link organizzatore.
+   L'area organizzatore resta invisibile a chi apre il sito normalmente:
+   compare SOLO aprendo l'indirizzo con questa parola dopo il cancelletto, cioè
+   https://cyberianna.github.io/burraco-summer-tour/#gestione-salvo
+   Per cambiarla basta modificare la riga qui sotto (senza il cancelletto).
+   Nota: nasconde la porta, non la chiude a chiave — la vera protezione
+   resta il token GitHub, senza il quale nessuno può salvare nulla. */
+const ADMIN_HASH = "gestione-salvo";
 
 /* ============================================================
    STATO
@@ -386,6 +396,30 @@ async function ghGet(path){
   if(!r.ok) throw new Error("GitHub GET "+r.status+": "+(await r.text()));
   return await r.json();
 }
+/* Verifica SERIA della chiave: la chiede a GitHub.
+   Non passa da loadData(), che ha un fallback sul file statico e quindi
+   riuscirebbe anche con una chiave falsa. Qui pretendiamo che GitHub
+   riconosca la chiave E che dia il permesso di scrittura. */
+async function verificaChiave(){
+  if(!token.get()) throw new Error("nessuna chiave inserita");
+  let r;
+  try{
+    r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}?ts=${Date.now()}`,
+      {headers: ghHeaders(), cache:"no-store"});
+  }catch(e){
+    throw new Error("non riesco a contattare GitHub — controlla la connessione");
+  }
+  if(r.status===401) throw new Error("chiave non riconosciuta da GitHub (controlla di averla copiata tutta)");
+  if(r.status===403) throw new Error("chiave bloccata o senza permessi su questo progetto");
+  if(r.status===404) throw new Error("questa chiave non ha accesso al progetto "+REPO);
+  if(!r.ok) throw new Error("GitHub ha risposto "+r.status);
+  const repo = await r.json();
+  // Senza chiave valida GitHub non manda affatto "permissions" (il repo è pubblico):
+  // se manca, vuol dire che la richiesta è passata come anonima.
+  if(!repo.permissions) throw new Error("chiave ignorata da GitHub: risulta un accesso anonimo");
+  if(!repo.permissions.push) throw new Error("questa chiave può solo leggere. Serve il permesso Contents: Read and write");
+  return true;
+}
 async function ghPut(path, contentStr, sha, message){
   const body = { message, content: b64encode(contentStr) };
   if(sha) body.sha = sha;
@@ -430,10 +464,20 @@ function renderAdmin(){
       <div id="adminStatus" class="status"></div>`;
     $("#loginBtn").onclick = async ()=>{
       const t = $("#tokenInput").value.trim(); if(!t) return;
+      const btn = $("#loginBtn");
+      btn.disabled = true;
       token.set(t);
-      setStatus("Verifico la chiave…","info");
-      try{ await loadData(); token.set(t); setStatus("Connesso! Ora puoi modificare.","ok"); renderAdmin(); render(); }
-      catch(e){ token.set(""); setStatus("Chiave non valida o senza permessi: "+e.message,"err"); }
+      setStatus("Verifico la chiave con GitHub…","info");
+      try{
+        await verificaChiave();          // <- il vero controllo: se fallisce, si esce di qui
+        await loadData();
+        setStatus("Chiave valida ✓ Ora puoi modificare e salvare.","ok");
+        renderAdmin(); render();
+      }catch(e){
+        token.set("");                   // chiave rifiutata: non la teniamo
+        setStatus("Chiave rifiutata: "+e.message,"err");
+        btn.disabled = false;
+      }
     };
     return;
   }
@@ -497,7 +541,7 @@ function renderAdmin(){
 
     <div id="adminStatus" class="status"></div>`;
 
-  $("#logoutBtn").onclick = ()=>{ token.set(""); renderAdmin(); };
+  $("#logoutBtn").onclick = ()=>{ token.set(""); renderAdmin(); aggiornaAccessoAdmin(); };
   $("#exportJson").onclick = exportJson;
   $("#exportCsv").onclick = exportCsv;
   $("#addTappaBtn").onclick = addTappa;
@@ -592,11 +636,36 @@ function bindUI(){
   $("#tappaSelect").addEventListener("change", ()=>render());
   $("#refreshBtn").onclick = async ()=>{ SHA=null; DATA=null; await loadData(); render(); };
   $("#adminBox").addEventListener("toggle", e=>{ if(e.target.open) renderAdmin(); });
+  addEventListener("hashchange", aggiornaAccessoAdmin);
+}
+
+/* ============================================================
+   ACCESSO ORGANIZZATORE
+   L'area è visibile solo a chi apre il link segreto (#ADMIN_HASH)
+   oppure a chi ha già la chiave salvata su questo dispositivo —
+   così Salvo, dopo la prima volta, la ritrova anche col link normale.
+   ============================================================ */
+function aggiornaAccessoAdmin(){
+  const chiesta = location.hash.replace(/^#/,"").trim().toLowerCase();
+  const sbloccata = (chiesta === ADMIN_HASH.toLowerCase()) || !!token.get();
+  const barra = $(".admin-bar");
+  barra.classList.toggle("sbloccata", sbloccata);
+  if(!sbloccata){ $("#adminBox").open = false; return; }
+  if(chiesta === ADMIN_HASH.toLowerCase()){ $("#adminBox").open = true; }
+  renderAdmin();
 }
 (async function(){
   bindUI();
+  // Se c'è una chiave salvata la ricontrollo subito: se non è più buona
+  // (scaduta, revocata, o robaccia rimasta da una prova) la butto via adesso,
+  // così non si scopre a fine serata dopo aver inserito tutti i risultati.
+  if(token.get()){
+    try{ await verificaChiave(); }
+    catch(e){ token.set(""); }
+  }
   await loadData();
   render();
+  aggiornaAccessoAdmin();
   $("#footNote").innerHTML = "Progetto: <span class='kbd'>"+OWNER+"/"+REPO+"</span>";
 })();
 </script>
